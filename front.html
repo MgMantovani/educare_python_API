@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Alunos - API Flask</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        input, button { padding: 6px; margin: 5px; }
+        table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 10px; }
+        th { background-color: #eee; }
+    </style>
+</head>
+<body>
+    <h1>Gerenciamento de Alunos</h1>
+
+    <h2 id="form-title">Cadastrar Aluno</h2>
+    <input type="hidden" id="aluno-id">
+    <input type="text" id="nome" placeholder="Nome">
+    <input type="email" id="email" placeholder="Email">
+    <input type="number" id="idade" placeholder="Idade">
+    <button onclick="salvarAluno()">Salvar</button>
+    <button onclick="cancelarEdicao()" style="display:none;" id="btn-cancelar">Cancelar</button>
+
+    <h2>Lista de Alunos</h2>
+    <button onclick="carregarAlunos()">Atualizar Lista</button>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>Nome</th><th>Email</th><th>Idade</th><th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-alunos"></tbody>
+    </table>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
+
+        function carregarAlunos() {
+            fetch(API_URL + "/alunos")
+                .then(res => res.json())
+                .then(data => {
+                    const tabela = document.getElementById("tabela-alunos");
+                    tabela.innerHTML = "";
+                    data.forEach(aluno => {
+                        tabela.innerHTML += `
+                            <tr>
+                                <td>${aluno.id}</td>
+                                <td>${aluno.nome}</td>
+                                <td>${aluno.email}</td>
+                                <td>${aluno.idade}</td>
+                                <td>
+                                    <button onclick="editarAluno(${aluno.id}, '${aluno.nome}', '${aluno.email}', ${aluno.idade})">Editar</button>
+                                    <button onclick="deletarAluno(${aluno.id})">Excluir</button>
+                                </td>
+                            </tr>`;
+                    });
+                });
+        }
+
+        function salvarAluno() {
+            const id = document.getElementById("aluno-id").value;
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+            const idade = parseInt(document.getElementById("idade").value);
+            const aluno = { nome, email, idade };
+
+            if (id) {
+                fetch(API_URL + "/alunos/" + id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(aluno)
+                }).then(() => {
+                    cancelarEdicao();
+                    carregarAlunos();
+                });
+            } else {
+                fetch(API_URL + "/alunos", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(aluno)
+                }).then(() => {
+                    cancelarEdicao();
+                    carregarAlunos();
+                });
+            }
+        }
+
+        function editarAluno(id, nome, email, idade) {
+            document.getElementById("form-title").innerText = "Editar Aluno";
+            document.getElementById("btn-cancelar").style.display = "inline";
+            document.getElementById("aluno-id").value = id;
+            document.getElementById("nome").value = nome;
+            document.getElementById("email").value = email;
+            document.getElementById("idade").value = idade;
+        }
+
+        function cancelarEdicao() {
+            document.getElementById("form-title").innerText = "Cadastrar Aluno";
+            document.getElementById("btn-cancelar").style.display = "none";
+            document.getElementById("aluno-id").value = "";
+            document.getElementById("nome").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("idade").value = "";
+        }
+
+        function deletarAluno(id) {
+            fetch(API_URL + "/alunos/" + id, {
+                method: "DELETE"
+            }).then(() => carregarAlunos());
+        }
+
+        carregarAlunos();
+    </script>
+</body>
+</html>
